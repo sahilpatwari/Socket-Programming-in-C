@@ -1,3 +1,5 @@
+// Purpose: Code to display/show ip address of hostname entered through the command line.
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<sys/types.h>

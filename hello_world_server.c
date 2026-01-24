@@ -1,3 +1,5 @@
+//Purpose: Simple Hello World Server
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
@@ -74,13 +76,18 @@ int main() {
             buffer[BUFFER] = '\0';
             printf("Received: %s\n",buffer);
 
-            char* response;
+            const char* response;
 
             if(strncmp(buffer,"GET",3) == 0) {
                 response = "HTTP/1.1 200 OK\r\n"
                            "Content-Type: text/html\r\n"
                            "\r\n"
                            "<html><body><h1>Hello from our C Server!</h1></body></html>";
+            } else {
+                response = "HTTP/1.1 501 Not Implemented\r\n"
+                           "Content-Type: text/html\r\n"
+                           "\r\n"
+                           "<html><body><h1>Server Error</h1><p>Server does not support this operation</p></body></html>";
             }
 
             if(send(newfd,response,strlen(response),0) == -1) {
