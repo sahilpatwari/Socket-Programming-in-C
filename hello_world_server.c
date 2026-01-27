@@ -85,9 +85,8 @@ int main() {
                            "<html><body><h1>Hello from our C Server!</h1></body></html>";
             } else {
                 response = "HTTP/1.1 501 Not Implemented\r\n"
-                           "Content-Type: text/html\r\n"
                            "\r\n"
-                           "<html><body><h1>Server Error</h1><p>Server does not support this operation</p></body></html>";
+                           "Server does not support this operation, only GET is supported.";
             }
 
             if(send(newfd,response,strlen(response),0) == -1) {

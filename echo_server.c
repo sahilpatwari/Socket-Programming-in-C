@@ -72,13 +72,14 @@ int main() {
         printf("Client Connected\n");
         int numBytes = recv(newfd,buffer,BUFFER - 1,0);
 
+
         if(numBytes > 0) {
             buffer[BUFFER] = '\0';
-            printf("Received: %s",buffer);
+            printf("Received: %s\n",buffer);
             if(send(newfd,buffer,numBytes,0) == -1) {
                 perror("send");
             }
-            printf("Sent: %s",buffer);
+            printf("Sent: %s\n",buffer);
         } else {
             perror("receive");
         }
