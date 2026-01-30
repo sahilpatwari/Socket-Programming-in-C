@@ -10,6 +10,7 @@
 #include<arpa/inet.h>
 #include<netinet/in.h>
 
+
 #include "my_functions.h"
 #include<stdbool.h>
 
@@ -92,7 +93,7 @@ int main() {
     if(p == NULL) {
         fprintf(stderr,"Server couldn't bind to a specific port\n");
         exit(1);
-    }
+    } 
     freeaddrinfo(res);
 
     if(listen(sockfd,BACKLOG) == -1) {
@@ -110,7 +111,7 @@ int main() {
         }
         char buffer[BUFFER];
         int bytes_received = recv(newfd,buffer,BUFFER - 1,0);
-         
+        buffer[bytes_received] ='\0';
         if(bytes_received < 0) {
             perror("receive");
             exit(1);
@@ -119,6 +120,7 @@ int main() {
         const char* response;
         char method[16],path[1024],protocol[16];
         int count = sscanf(buffer,"%15s %1023s %15s",method,path,protocol);
+        printf("%s\n",path);
         if(count != 3) {
             fprintf(stderr,"Unknown Error in Parsing the Request");
             response = "HTTP/1.1 500 Internal Server Error\r\n"
@@ -150,47 +152,87 @@ int main() {
                          send(newfd,response,strlen(response),0);
                    }
                    
-                   FILE* fp = fopen("uploaded.png","wb");
-                   if(!fp) {
-                      perror("File Open Failed");
-                      close(newfd);
-                      return 0;
-                   }
-                   int total_bytes_received = 0;
-                   char* body_start = strstr(buffer,"\r\n\r\n");
-                   if(body_start != NULL) {
-                      body_start += 4;
+                    int total_bytes_received = 0;
+                    char* body_start = strstr(buffer,"\r\n\r\n");
 
-                      int header_size = body_start - buffer;
-                      int initial_body_bytes = bytes_received - header_size;
+                   if(strcmp(path,"/image") == 0) {
+                        FILE* fp = fopen("uploaded.png","wb");
+                        if(!fp) {
+                            perror("File Open Failed");
+                            close(newfd);
+                            return 0;
+                        }
+                       
+                        if(body_start != NULL) {
+                            body_start += 4;
 
-                      if(initial_body_bytes > 0 ) {
-                            fwrite(body_start,1,initial_body_bytes,fp);
-                            total_bytes_received += initial_body_bytes;
-                      } 
-                   }
+                            int header_size = body_start - buffer;
+                            int initial_body_bytes = bytes_received - header_size;
 
-                   while(total_bytes_received < content_length) {
-                        memset(buffer,0,BUFFER);
-
-                        int n = recv(newfd,buffer,BUFFER - 1,0);
-
-                        if(n < 0) {
-                            printf("Partial disconnect during upload\n");
-                            break;
+                            if(initial_body_bytes > 0 ) {
+                                    fwrite(body_start,1,initial_body_bytes,fp);
+                                    total_bytes_received += initial_body_bytes;
+                            } 
                         }
 
-                        fwrite(buffer,1,n,fp);
-                        total_bytes_received += n; 
-                   }
+                        while(total_bytes_received < content_length) {
+                                memset(buffer,0,BUFFER);
 
-                   printf("Upload Complete\n");
-                   fclose(fp);
- 
-                   response = "HTTP/1.1 200  OK\r\n"
+                                int n = recv(newfd,buffer,BUFFER - 1,0);
+
+                                if(n < 0) {
+                                    printf("Partial disconnect during upload\n");
+                                    break;
+                                }
+
+                                fwrite(buffer,1,n,fp);
+                                total_bytes_received += n; 
+                        }
+
+                        printf("Upload Complete\n");
+                        fclose(fp);
+
+                        response = "HTTP/1.1 200  OK\r\n"
+                                "\r\n"
+                                "Upload Successful";
+                        send(newfd,response,strlen(response),0);
+                   } else if(strcmp(path,"/details") == 0){
+                        if(body_start != NULL) {
+                            body_start += 4;
+                        }
+                        int i = 0;
+                        char text[512];
+                        while(i < strlen(body_start) && i < 511) {
+                            text[i] = body_start[i];
+                            i++;
+                        }
+                        text[i] ='\0';
+                        i = 0;
+                        printf("%s\n",text);
+                        char* name_ptr = strstr(text,"Name");
+                        char clean_name[100];
+                        if(name_ptr) {
+                           name_ptr += 5;
+                        }
+                        while(*name_ptr != '&') {
+                           clean_name[i] = *name_ptr;
+                           i++;
+                           name_ptr++;
+                        }
+                        char info[512];
+                        snprintf(info,sizeof info ,
+                                "HTTP/1.1 200 OK \r\n"
+                                "Content-Type: text/html \r\n"
+                                "\r\n"
+                                "<html><body><h1>Hello %s! Your details have been saved"
+                                 ,clean_name);
+                        send(newfd,info,strlen(info),0);
+                   } else {
+                         response = "HTTP/1.1 501 Not Implemented\r\n"
                            "\r\n"
-                           "Upload Successful";
-                   send(newfd,response,strlen(response),0);
+                           "Server does not support this Request";
+                        send(newfd,response,strlen(response),0);
+                   }
 
             } else {
                 response = "HTTP/1.1 501 Not Implemented\r\n"

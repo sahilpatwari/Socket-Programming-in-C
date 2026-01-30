@@ -6,17 +6,20 @@
 
 const char* getMimeType(const char* filename) {
     const char* dot = strrchr(filename,'.');
-    if(strstr(dot,".html") != NULL) return "text/html";
-    else if(strstr(dot,".css") != NULL) return "text/css";
-    else if(strstr(dot,".jpeg") != NULL) return "image/jpeg";
-    else if(strstr(dot,".png") != NULL) return "image/png";
+
+    if(!dot) return "text/plain";
+
+    if(strcmp(dot,".html") == 0) return "text/html";
+    else if(strcmp(dot,".css") == 0) return "text/css";
+    else if(strcmp(dot,".jpeg") == 0) return "image/jpeg";
+    else if(strcmp(dot,".png") == 0) return "image/png";
     return "text/plain";
 }
 
 
 void serve_file(int newfd,const char* path) {
     char file_path[256];
-    snprintf(file_path,sizeof(file_path),"./public/%s",path);
+    snprintf(file_path,sizeof(file_path),"./public%s",path);
 
     FILE* file = fopen(file_path,"rb");
 
