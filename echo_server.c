@@ -9,16 +9,42 @@
 #include<netdb.h>
 #include<arpa/inet.h>
 #include<netinet/in.h>
+#include<pthread.h>
 
 #define PORT "3490"
 #define BACKLOG 10
 #define BUFFER 100
+
+typedef struct {
+    int client_fd;
+}thread_args_t;
+
+
+void* handle_client(void* args) {
+    thread_args_t *thread_args = (thread_args_t*)args;
+    int newfd = thread_args->client_fd;
+    free(thread_args);
+    char buffer[BUFFER];
+    printf("Client Connected\n");
+    int numBytes = recv(newfd,buffer,BUFFER - 1,0);
+    if(numBytes > 0) {
+        buffer[BUFFER] = '\0';
+        printf("Received: %s\n",buffer);
+        if(send(newfd,buffer,numBytes,0) == -1) {
+            perror("send");
+        }
+        printf("Sent: %s\n",buffer);
+    } else {
+        perror("receive");
+    }
+    close(newfd);
+    return NULL;  
+}
 int main() {
     struct sockaddr_storage their_addr;
     struct addrinfo hints,*res,*p;
     int status,sockfd,newfd,yes = 1;
     socklen_t sin_size;
-    char buffer[BUFFER];
     memset(&hints,0,sizeof hints);
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -69,21 +95,23 @@ int main() {
             continue;
         }
         
-        printf("Client Connected\n");
-        int numBytes = recv(newfd,buffer,BUFFER - 1,0);
+        thread_args_t *args = malloc(sizeof(thread_args_t));
 
-
-        if(numBytes > 0) {
-            buffer[BUFFER] = '\0';
-            printf("Received: %s\n",buffer);
-            if(send(newfd,buffer,numBytes,0) == -1) {
-                perror("send");
-            }
-            printf("Sent: %s\n",buffer);
-        } else {
-            perror("receive");
+        if(!args) {
+            perror("malloc");
+            close(newfd);
+            return 0;
         }
-        close(newfd);
+        
+        args->client_fd = newfd;
+        pthread_t tid;
+        if(pthread_create(&tid,NULL,handle_client,(void*)args) !=0) {
+            perror("pthread");
+            free(args);
+            close(newfd);
+        } else {
+            pthread_detach(tid);
+        }
     }
     return 0;
 }
