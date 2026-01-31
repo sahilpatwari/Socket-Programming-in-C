@@ -1,3 +1,6 @@
+body {
+    background-color: #f5f7fb;
+}
 .form-body {
     height:100vh;
     display:flex;
@@ -8,11 +11,43 @@
 form {
     display:flex;
     flex-direction: column;
-    height:320px;
+    height:220px;
     width:270px;
+    background-color:white;
+    border-radius:5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
 }
 
+label {
+    font-style:italic;
+    margin-left:20px;
+}
+
 input {
-    margin-bottom: 20px;
+    width:70%;
+    margin:0px 0px 20px 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+}
+
+input:focus {
+    border-color: #4361ee;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+button {
+    width:50%;
+    margin:0px 0px 20px 50px;
+    background-color:#4361ee;
+    cursor: pointer;
+    color:white;
+}
+
+button:hover {
+  background-color:#3f37c9;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
 }
